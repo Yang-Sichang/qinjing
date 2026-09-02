@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>琴境 · 古琴练习与填色电子书</title>
+<style>
+  :root{
+    --ink:#2e302c; --muted:#7d8178; --paper:#f7f1df; --paper2:#eee5cd;
+    --jade:#708a78; --gold:#b79255; --line:#d7ccb0; --red:#a65f4e;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:#e9e3d4;color:var(--ink);font-family:"Songti SC","STSong","Noto Serif CJK SC",serif}
+  button{font:inherit;cursor:pointer}
+  .app{min-height:100vh;display:flex;flex-direction:column}
+  header{
+    height:68px;background:#2f3731;color:#f5efdf;display:flex;align-items:center;
+    justify-content:space-between;padding:0 34px;box-shadow:0 3px 12px #0002
+  }
+  .brand{display:flex;align-items:center;gap:12px;font-size:22px;letter-spacing:4px}
+  .brand-mark{width:34px;height:34px;border:1px solid #bfa76f;border-radius:50%;display:grid;place-items:center;color:#d2bb83}
+  .progress-top{font-size:13px;color:#cfc7b3;letter-spacing:1px}
+  main{display:grid;grid-template-columns:270px 1fr 340px;gap:18px;padding:20px;flex:1;max-width:1500px;width:100%;margin:auto}
+  .panel{background:var(--paper);border:1px solid var(--line);border-radius:12px;box-shadow:0 5px 18px #5b50341a}
+  .left{padding:18px}
+  .section-title{font-size:13px;color:var(--muted);letter-spacing:3px;margin:3px 0 14px}
+  .song{padding:13px 12px;border-radius:9px;margin-bottom:8px;border:1px solid transparent}
+  .song.active{background:#e1e5d9;border-color:#c0cdbf}
+  .song-title{font-size:17px}
+  .song-sub{font-size:12px;color:var(--muted);margin-top:4px}
+  .song .mini{float:right;color:var(--gold);font-size:12px}
+  .streak{margin-top:24px;padding:15px;background:#f0ead9;border-radius:9px;border:1px dashed #cbbd9d}
+  .streak strong{font-size:24px;color:#8a6b37}
+  .center{padding:0;overflow:hidden}
+  .book-head{padding:20px 24px 12px;display:flex;justify-content:space-between;align-items:end}
+  .book-title{font-size:28px;letter-spacing:3px}
+  .book-sub{color:var(--muted);font-size:13px;margin-top:6px}
+  .book{margin:0 20px 20px;position:relative;min-height:610px;background:#d9d0b9;border-radius:10px;overflow:hidden;border:1px solid #c4b99d}
+  .scene{width:100%;height:610px;display:block;background:#d8ddcf}
+  .scene text{font-family:"Songti SC","STSong",serif}
+  .lock-cover{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;pointer-events:none}
+  .lock-card{background:#273029dd;color:#f8f1df;padding:25px 32px;border-radius:12px;text-align:center;backdrop-filter:blur(3px);border:1px solid #d6bd7d66}
+  .lock-icon{font-size:34px;margin-bottom:8px}
+  .lock-card h2{margin:5px 0 8px;font-size:22px;font-weight:normal}
+  .lock-card p{margin:0;color:#d6d0c1;font-size:13px}
+  .book.unlocked .lock-cover{display:none}
+  .palette{padding:15px 20px 20px;display:flex;align-items:center;gap:9px;flex-wrap:wrap}
+  .palette-label{font-size:13px;color:var(--muted);margin-right:4px}
+  .swatch{width:28px;height:28px;border-radius:50%;border:2px solid #fff;box-shadow:0 1px 5px #0003}
+  .swatch.selected{outline:2px solid var(--gold);outline-offset:2px}
+  .right{padding:20px}
+  .practice-card{padding:16px;border:1px solid var(--line);border-radius:10px;background:#faf6e9}
+  .practice-card h3{margin:0 0 7px;font-size:18px;font-weight:normal}
+  .practice-card p{font-size:13px;color:var(--muted);line-height:1.7;margin:0 0 15px}
+  .segments{display:flex;flex-direction:column;gap:9px}
+  .seg{display:grid;grid-template-columns:35px 1fr auto;align-items:center;gap:9px;padding:10px;border-radius:8px;background:#eee7d7;border:1px solid #ddd2b8}
+  .seg.done{background:#e0e8dc;border-color:#c4d0bf}
+  .seg-num{width:27px;height:27px;border-radius:50%;background:#d3c7aa;display:grid;place-items:center;font-size:12px}
+  .seg.done .seg-num{background:var(--jade);color:white}
+  .seg-name{font-size:14px}
+  .seg-time{font-size:11px;color:var(--muted)}
+  .seg button{border:0;background:#697f6d;color:white;border-radius:6px;padding:6px 10px;font-size:12px}
+  .seg.done button{background:#a98b52}
+  .hint{margin-top:14px;padding:12px;background:#efe7d4;border-radius:8px;font-size:12px;line-height:1.7;color:#696958}
+  .achievement{margin-top:18px;padding:16px;background:#313b34;color:#efe6ce;border-radius:10px}
+  .achievement h3{margin:0 0 8px;font-weight:normal}
+  .meter{height:7px;background:#596259;border-radius:99px;overflow:hidden}
+  .meter i{display:block;height:100%;width:0;background:#c7aa69;transition:.35s}
+  .meter-row{display:flex;justify-content:space-between;font-size:11px;color:#c4c0b0;margin-top:7px}
+  .toast{position:fixed;left:50%;bottom:28px;transform:translateX(-50%) translateY(20px);background:#29332d;color:#fff3da;padding:12px 18px;border-radius:8px;opacity:0;pointer-events:none;transition:.3s;box-shadow:0 5px 20px #0004;font-size:13px}
+  .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+  .yuyin-card{margin-top:18px}.yuyin-head{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px}.seal-count{font-size:11px;color:#8c7448;background:#eee3c9;padding:5px 8px;border-radius:99px}.seal-list{display:flex;flex-direction:column;gap:8px;max-height:300px;overflow:auto}.seal-item{display:grid;grid-template-columns:31px 1fr;gap:9px;padding:10px;background:#f0eadb;border:1px solid #ddd1b6;border-radius:8px}.seal-item.mine{background:#e6eadf;border-color:#cbd4c3}.seal-icon{width:28px;height:28px;border:1px solid #b69b68;border-radius:50%;display:grid;place-items:center;color:#8a6b3b;font-size:11px;background:#f7efd9}.seal-meta{font-size:11px;color:#7f765f;margin-bottom:4px}.seal-text{font-size:13px;line-height:1.55}.seal-by{font-size:10px;color:#989180;margin-top:5px}.yuyin-actions{display:flex;gap:8px;margin-top:11px}.seal-btn,.upload-btn{border:1px solid #b8aa8c;border-radius:7px;padding:8px 10px;font-size:12px}.seal-btn{background:#6d806f;color:white;border-color:#6d806f;flex:1}.upload-btn{background:#f7f1df;color:#6b6658}.yuyin-tip{font-size:11px;color:#8b8779;line-height:1.6;margin-top:9px}.modal{position:fixed;inset:0;background:#17201999;display:none;align-items:center;justify-content:center;z-index:10;padding:20px}.modal.show{display:flex}.modal-card{width:min(500px,100%);background:#f8f2e2;border:1px solid #cdbf9f;border-radius:12px;padding:20px;box-shadow:0 15px 45px #0005}.modal-card h2{font-size:21px;font-weight:normal;margin:0 0 5px}.modal-card p{font-size:12px;color:#817b6b;margin:0 0 14px}.seal-types{display:flex;gap:7px;flex-wrap:wrap;margin-bottom:12px}.type-btn{border:1px solid #d0c3a7;background:#eee7d6;border-radius:99px;padding:6px 10px;font-size:12px}.type-btn.active{background:#6d806f;color:white;border-color:#6d806f}.modal textarea{width:100%;min-height:105px;resize:vertical;border:1px solid #d1c5aa;background:#fffaf0;border-radius:8px;padding:10px;font:inherit;font-size:13px;outline:none}.modal-foot{display:flex;justify-content:flex-end;gap:8px;margin-top:12px}.modal-foot button{border:1px solid #cbbd9f;border-radius:7px;padding:8px 13px;background:#eee6d3;font-size:12px}.modal-foot .save{background:#6d806f;color:white;border-color:#6d806f}
+  @media(max-width:1050px){main{grid-template-columns:220px 1fr}.right{grid-column:1/-1}.book{min-height:500px}.scene{height:500px}}
+  @media(max-width:700px){header{padding:0 16px}.progress-top{display:none}main{display:block;padding:10px}.left,.right{margin-bottom:12px}.book{margin:0 10px 10px}.scene{height:430px}.book{min-height:430px}}
+</style>
+</head>
+<body>
+<div class="app">
+<header>
+  <div class="brand"><div class="brand-mark">琴</div>琴境</div>
+  <div class="progress-top">今日练习 · 2 / 4 段完成　|　连续 7 天</div>
+</header>
+
+<main>
+  <aside class="panel left">
+    <div class="section-title">我的琴谱</div>
+    <div class="song active">
+      <span class="mini">2/4</span>
+      <div class="song-title">《流水》</div>
+      <div class="song-sub">高山深谷 · 山泉入涧</div>
+    </div>
+    <div class="song">
+      <span class="mini">0/5</span>
+      <div class="song-title">《梅花三弄》</div>
+      <div class="song-sub">疏影横斜 · 暗香浮动</div>
+    </div>
+    <div class="song">
+      <span class="mini">0/6</span>
+      <div class="song-title">《平沙落雁》</div>
+      <div class="song-sub">秋水长天 · 孤雁远鸣</div>
+    </div>
+    <div class="song">
+      <span class="mini">🔒</span>
+      <div class="song-title">《潇湘水云》</div>
+      <div class="song-sub">完成前三曲后开启</div>
+    </div>
+    <div class="streak">
+      <div class="section-title">今日雅集</div>
+      <strong>7</strong> 日连续练琴
+      <div style="font-size:12px;color:#777;margin-top:5px">再练 1 段，点亮今日印记</div>
+    </div>
+  </aside>
+
+  <section class="panel center">
+    <div class="book-head">
+      <div>
+        <div class="book-title">《流水》· 一卷山水</div>
+        <div class="book-sub">每完成一段琴曲，便为古画添上一笔颜色。</div>
+      </div>
+      <div style="font-size:12px;color:#8d7650">已解锁 2 / 4 章</div>
+    </div>
+    <div class="book" id="book">
+      <svg class="scene" viewBox="0 0 900 610" xmlns="http://www.w3.org/2000/svg">
+        <rect width="900" height="610" fill="#d9ddcf"/>
+        <g opacity=".7">
+          <path d="M0 380 Q130 300 260 390 T520 350 T900 365 L900 610 L0 610Z" fill="#aab8a8"/>
+          <path d="M0 450 Q160 365 300 440 T620 430 T900 455 L900 610 L0 610Z" fill="#91a391"/>
+          <path d="M0 505 Q180 450 330 500 T650 490 T900 510 L900 610 L0 610Z" fill="#758d7d"/>
+        </g>
+        <g id="lockedLayer" opacity=".18">
+          <path d="M110 455 Q170 330 245 280 Q315 350 390 455" fill="none" stroke="#475b50" stroke-width="28"/>
+          <path d="M550 480 Q635 345 735 300 Q805 370 855 480" fill="none" stroke="#475b50" stroke-width="24"/>
+          <path d="M340 520 C380 420 440 390 510 520" fill="none" stroke="#33463d" stroke-width="18"/>
+        </g>
+        <!-- coloring regions -->
+        <path class="region" data-id="mountain1" d="M75 455 Q145 335 235 260 Q295 340 375 455Z" fill="#d9ddcf" stroke="#52655a" stroke-width="2"/>
+        <path class="region" data-id="mountain2" d="M525 475 Q620 340 720 280 Q790 365 865 475Z" fill="#d9ddcf" stroke="#52655a" stroke-width="2"/>
+        <path class="region" data-id="water" d="M0 455 Q140 405 290 465 Q430 520 585 455 Q730 395 900 460 L900 610 L0 610Z" fill="#d9ddcf" stroke="#52655a" stroke-width="2"/>
+        <path class="region" data-id="moon" d="M675 95 A45 45 0 1 0 676 185 A35 35 0 1 1 675 95Z" fill="#d9ddcf" stroke="#8b7a55" stroke-width="2"/>
+        <g class="ink-lines" fill="none" stroke="#40534a" stroke-width="2" opacity=".7">
+          <path d="M115 435 Q165 360 225 300"/><path d="M135 442 Q185 370 245 320"/>
+          <path d="M565 455 Q625 370 700 315"/><path d="M595 462 Q660 380 735 330"/>
+          <path d="M85 505 Q220 470 350 520 T620 505 T890 515"/>
+          <path d="M65 530 Q210 500 350 545 T640 530 T900 545"/>
+        </g>
+        <text x="40" y="65" fill="#526158" font-size="20" letter-spacing="5">高山流水 · 意在弦外</text>
+        <text x="760" y="565" fill="#e8dfc9" font-size="13">琴境 · 卷一</text>
+      </svg>
+      <div class="lock-cover" id="lockCover">
+        <div class="lock-card">
+          <div class="lock-icon">🔒</div>
+          <h2>山水尚未着色</h2>
+          <p>完成对应练习段落，解锁画卷中的景物。</p>
+        </div>
+      </div>
+    </div>
+    <div class="palette">
+      <span class="palette-label">选一笔：</span>
+      <button class="swatch selected" data-color="#7d927c" style="background:#7d927c"></button>
+      <button class="swatch" data-color="#8fa8b5" style="background:#8fa8b5"></button>
+      <button class="swatch" data-color="#c4a76a" style="background:#c4a76a"></button>
+      <button class="swatch" data-color="#9e6d5d" style="background:#9e6d5d"></button>
+      <button class="swatch" data-color="#5c695f" style="background:#5c695f"></button>
+      <button class="swatch" data-color="#e2d2a5" style="background:#e2d2a5"></button>
+      <span style="font-size:12px;color:#8a8677;margin-left:8px">点击画卷中的区域填色</span>
+    </div>
+  </section>
+
+  <aside class="panel right">
+    <div class="section-title">今日练习</div>
+    <div class="practice-card">
+      <h3>《流水》 · 第三段</h3>
+      <p>练习提示：放慢右手吟猱，听每一个音的余韵。完成后可为“远山”着色。</p>
+      <div class="segments">
+        <div class="seg done"><div class="seg-num">一</div><div><div class="seg-name">引子 · 山起</div><div class="seg-time">12 min · 已完成</div></div><button>已解锁</button></div>
+        <div class="seg done"><div class="seg-num">二</div><div><div class="seg-name">水来 · 初流</div><div class="seg-time">15 min · 已完成</div></div><button>已解锁</button></div>
+        <div class="seg"><div class="seg-num">三</div><div><div class="seg-name">水势 · 奔涌</div><div class="seg-time">18 min · 待练</div></div><button onclick="completeSegment(3)">开始</button></div>
+        <div class="seg"><div class="seg-num">四</div><div><div class="seg-name">归谷 · 余韵</div><div class="seg-time">12 min · 待解锁</div></div><button disabled style="opacity:.45">🔒</button></div>
+      </div>
+      <div class="hint">💡 练完一段后，点击“完成”即可解锁对应画面。没有标准答案，颜色由你决定。</div>
+    </div>
+    <div class="practice-card yuyin-card"><div class="yuyin-head"><div><div class="section-title" style="margin:0 0 5px">语印</div><h3 style="margin:0">在琴谱上留下你的印记</h3></div><span class="seal-count" id="sealCount">3 枚</span></div><div class="seal-list" id="sealList"><div class="seal-item"><div class="seal-icon">难</div><div><div class="seal-meta">🔴 难点 · 第17小节</div><div class="seal-text">这里的吟猱不要急，先把尾音沉下来。</div><div class="seal-by">琴友「松风」 · 23天前　♡ 12</div></div></div><div class="seal-item"><div class="seal-icon">悟</div><div><div class="seal-meta">🟢 指法 · 第19小节</div><div class="seal-text">我后来发现是左手按音的问题，慢练很有效。</div><div class="seal-by">琴友「云水」 · 8天前　♡ 7</div></div></div><div class="seal-item mine"><div class="seal-icon">我</div><div><div class="seal-meta">🟡 我的点评 · 今天</div><div class="seal-text">第三段右手已经顺了，明天重点练17～22小节。</div><div class="seal-by">我的语印　♡ 0</div></div></div></div><div class="yuyin-actions"><button class="seal-btn" onclick="openSealComposer()">＋ 留下一枚语印</button><button class="upload-btn" onclick="fakeUpload()">↑ 上传笔记</button></div><div class="yuyin-tip">语印不是实时聊天，而是留给后来琴友的练琴线索。可扩展上传手写谱、图片、录音或视频。</div></div>
+    <div class="achievement">
+      <h3>画卷进度</h3>
+      <div class="meter"><i id="meter"></i></div>
+      <div class="meter-row"><span>已着色 2 / 4</span><span id="percent">50%</span></div>
+    </div>
+  </aside>
+</main>
+<div class="modal" id="sealModal" onclick="if(event.target===this)closeSealComposer()"><div class="modal-card"><h2>留下一枚语印</h2><p>选择印记类型，写下给自己或后来琴友的练习心得。</p><div class="seal-types"><button class="type-btn active" data-type="🔴 难点">🔴 难点</button><button class="type-btn" data-type="🟡 易错">🟡 易错</button><button class="type-btn" data-type="🔵 节奏">🔵 节奏</button><button class="type-btn" data-type="🟢 指法">🟢 指法</button><button class="type-btn" data-type="🟣 意境">🟣 意境</button><button class="type-btn" data-type="📝 我的点评">📝 我的点评</button></div><textarea id="sealText" placeholder="例如：这里不要追求速度，先听清两个音之间的呼吸……"></textarea><div class="modal-foot"><button onclick="closeSealComposer()">取消</button><button class="save" onclick="saveSeal()">盖下语印</button></div></div></div>
+<div class="toast" id="toast"></div>
+<script>
+let selected = "#7d927c";
+let unlocked = new Set(["mountain1","water"]);
+const map = {3:["mountain2"],4:["moon"]};
+
+document.querySelectorAll(".swatch").forEach(s=>{
+  s.addEventListener("click",()=>{
+    document.querySelectorAll(".swatch").forEach(x=>x.classList.remove("selected"));
+    s.classList.add("selected"); selected=s.dataset.color;
+  });
+});
+
+document.querySelectorAll(".region").forEach(r=>{
+  r.addEventListener("click",()=>{
+    if(!unlocked.has(r.dataset.id)){toast("这一景还未解锁，先完成对应琴段吧。");return;}
+    r.setAttribute("fill",selected);
+    r.style.opacity="1";
+    toast("这一笔落下了。继续听琴，也继续着色。");
+  });
+});
+function completeSegment(n){
+  if(n!==3)return;
+  unlocked.add("mountain2");
+  document.querySelector('[data-id="mountain2"]').setAttribute("fill","#d9ddcf");
+  document.querySelector('[data-id="mountain2"]').style.opacity="1";
+  const seg=document.querySelectorAll(".seg")[2];
+  seg.classList.add("done");
+  seg.querySelector(".seg-time").textContent="18 min · 已完成";
+  seg.querySelector("button").textContent="已解锁";
+  seg.querySelector("button").disabled=true;
+  const next=document.querySelectorAll(".seg")[3];
+  next.querySelector("button").disabled=false;
+  next.querySelector("button").style.opacity="1";
+  next.querySelector("button").textContent="开始";
+  document.getElementById("meter").style.width="75%";
+  document.getElementById("percent").textContent="75%";
+  document.querySelector(".lock-card h2").textContent="远山已开启";
+  document.querySelector(".lock-card p").textContent="再完成最后一段，月色便会落进画卷。";
+  toast("完成第三段！远山章节已解锁。");
+}
+function toast(msg){
+  const t=document.getElementById("toast");t.textContent=msg;t.classList.add("show");
+  clearTimeout(window.__toast);window.__toast=setTimeout(()=>t.classList.remove("show"),2200);
+}
+document.getElementById("book").classList.add("unlocked");
+let selectedSealType="🔴 难点";document.querySelectorAll(".type-btn").forEach(b=>b.addEventListener("click",()=>{document.querySelectorAll(".type-btn").forEach(x=>x.classList.remove("active"));b.classList.add("active");selectedSealType=b.dataset.type;}));function openSealComposer(){document.getElementById("sealModal").classList.add("show");document.getElementById("sealText").focus()}function closeSealComposer(){document.getElementById("sealModal").classList.remove("show")}function saveSeal(){const t=document.getElementById("sealText").value.trim();if(!t){toast("先写下一点你的琴心得吧。");return}const l=document.getElementById("sealList"),i=document.createElement("div");i.className="seal-item mine";i.innerHTML='<div class="seal-icon">我</div><div><div class="seal-meta"></div><div class="seal-text"></div><div class="seal-by">我的语印 · 刚刚　♡ 0</div></div>';i.querySelector(".seal-meta").textContent=selectedSealType+" · 第三段";i.querySelector(".seal-text").textContent=t;l.prepend(i);document.getElementById("sealCount").textContent=l.children.length+" 枚";document.getElementById("sealText").value="";closeSealComposer();toast("语印已落下。后来琴友会看见它。")}function fakeUpload(){toast("上传入口已准备，可扩展为图片、PDF、录音和视频笔记")}
+
+/* 琴境 v1：本地持久化层 */
+(function(){
+  const KEY='qinjing-v1-state';
+  let state={colors:{},seals:[]};
+  try{state=Object.assign(state,JSON.parse(localStorage.getItem(KEY)||'{}'));}catch(e){}
+  function persist(){localStorage.setItem(KEY,JSON.stringify(state));}
+  document.querySelectorAll('.region').forEach(r=>{
+    const id=r.dataset.id;
+    if(state.colors && state.colors[id]){r.setAttribute('fill',state.colors[id]);r.style.opacity='1';}
+    r.addEventListener('click',()=>{ if(typeof unlocked!=='undefined' && unlocked.has(id)){state.colors[id]=selected;persist();} });
+  });
+  const oldSave=window.saveSeal;
+  window.saveSeal=function(){
+    const before=document.getElementById('sealList').children.length;
+    oldSave();
+    const text=document.getElementById('sealText').value.trim();
+    // oldSave clears textarea, so collect newest DOM item instead
+    const newest=document.getElementById('sealList').firstElementChild;
+    if(newest && document.getElementById('sealList').children.length>before){
+      state.seals.unshift({type:selectedSealType,text:newest.querySelector('.seal-text').textContent,createdAt:Date.now()});
+      persist();
+    }
+  };
+  // Restore user seals saved on this browser.
+  const list=document.getElementById('sealList');
+  (state.seals||[]).slice().reverse().forEach(x=>{
+    const item=document.createElement('div');item.className='seal-item mine';
+    item.innerHTML='<div class="seal-icon">我</div><div><div class="seal-meta"></div><div class="seal-text"></div><div class="seal-by">我的语印 · 本机保存　♡ 0</div></div>';
+    item.querySelector('.seal-meta').textContent=x.type+' · 第三段';
+    item.querySelector('.seal-text').textContent=x.text;
+    list.appendChild(item);
+  });
+  const count=document.getElementById('sealCount'); if(count) count.textContent=list.children.length+' 枚';
+
+  // Replace demo upload alert with a real local file preview.
+  window.fakeUpload=function(){
+    const input=document.createElement('input');input.type='file';input.accept='image/*,.pdf,audio/*,video/*';
+    input.onchange=()=>{if(input.files[0]){toast('已选择：'+input.files[0].name+'（第一版仅保存在本次页面中）');}};input.click();
+  };
+})();
+
+</script>
+</body>
+</html>
