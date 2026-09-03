@@ -25,12 +25,13 @@
     window.__qjRepeatLastPlaced=0;
   }
   var lastSong=window.currentSongId||'liushui';
-  var lastPlaced=0;
+  var initialPuzzle=puzzle();
+  var lastPlaced=Array.isArray(initialPuzzle.placed)?initialPuzzle.placed.length:0;
   function tick(){
     var sid=window.currentSongId||'liushui';
-    if(sid!==lastSong){lastSong=sid;lastPlaced=0}
     var p=puzzle(),placed=Array.isArray(p.placed)?p.placed.length:0,size=songCount()*songCount();
-    if(placed===size&&size>0&&lastPlaced<size)recordCollection();
+    if(sid!==lastSong){lastSong=sid;lastPlaced=placed}
+    else if(placed===size&&size>0&&lastPlaced<size)recordCollection();
     lastPlaced=placed;
     renderDaily();
     renderRepeatButton();
