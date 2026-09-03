@@ -1,0 +1,31 @@
+var selected=localStorage.qjColor||"#7d927c";
+var unlocked=new Set(["mountain1","water"]);
+var colors=JSON.parse(localStorage.qjColors||"{}");
+var selectedSealType="🔴 难点";
+var SUPABASE_URL="https://jyqihzjwzkbtunefcbqj.supabase.co";
+var SUPABASE_ANON_KEY="sb_publishable_sCDcbM8I7rBT7d3eM7-coA_J2Vs0C8F";
+var sb=window.supabase.createClient(SUPABASE_URL,SUPABASE_ANON_KEY),currentUser=null;
+function $(id){return document.getElementById(id)}
+function escapeHtml(s){return String(s).replace(/[&<>"']/g,function(c){return ({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"})[c]})}
+function saveColors(){localStorage.qjColors=JSON.stringify(colors)}
+function regionUnlocked(r){return unlocked.has(r.dataset.id)}
+function renderRegions(){document.querySelectorAll(".region").forEach(function(r){var ok=regionUnlocked(r),value=colors[r.dataset.id];r.classList.toggle("locked-region",!ok);r.setAttribute("fill",value||"#d9ddcf");r.setAttribute("aria-label",ok?(value?"已着色区域，点击可重新着色":"可填色区域"):"未解锁区域")})}
+function renderColors(){renderRegions();document.querySelectorAll(".swatch").forEach(function(s){s.classList.toggle("selected",s.dataset.color===selected)})}
+document.querySelectorAll(".swatch").forEach(function(s){s.addEventListener("click",function(){selected=s.dataset.color;localStorage.qjColor=selected;renderColors();toast("已选这一笔。现在点击画卷中的区域。")})});
+document.querySelectorAll(".region").forEach(function(r){r.addEventListener("click",function(){if(!regionUnlocked(r)){toast("这一景还未解锁，先完成对应琴段吧。");return}colors[r.dataset.id]=selected;saveColors();renderColors();toast("这一笔落下了。")})});
+function unlockRegion(id){unlocked.add(id);renderColors()}
+function completeSegment(n){if(n!==3)return;unlockRegion("mountain2");var seg=document.querySelectorAll(".seg")[2];if(seg){seg.classList.add("done");var t=seg.querySelector(".seg-time"),b=seg.querySelector("button");if(t)t.textContent="18 min · 已完成";if(b){b.textContent="已解锁";b.disabled=true}}var next=document.querySelectorAll(".seg")[3];if(next){var nb=next.querySelector("button");if(nb){nb.disabled=false;nb.style.opacity="1";nb.textContent="开始"}}if($("meter"))$("meter").style.width="75%";if($("percent"))$("percent").textContent="75%";toast("完成第三段！远山章节已解锁。")}
+document.querySelectorAll('[data-action="complete-segment"]').forEach(function(b){b.addEventListener("click",function(){completeSegment(Number(b.dataset.segment))})});
+document.querySelectorAll(".type-btn").forEach(function(b){b.addEventListener("click",function(){document.querySelectorAll(".type-btn").forEach(function(x){x.classList.remove("active")});b.classList.add("active");selectedSealType=b.dataset.type})});
+function openSealComposer(){$("sealModal").classList.add("show");$("sealText").focus()}function closeSealComposer(){$("sealModal").classList.remove("show")}
+async function initUser(){var r=await sb.auth.getSession();if(r.data.session)currentUser=r.data.session.user;else{var a=await sb.auth.signInAnonymously();if(a.error){console.error(a.error);toast("无法建立匿名身份，请检查 Supabase 设置。");return}currentUser=a.data.user}await loadYuyin()}
+async function loadYuyin(){if(!currentUser)return;var r=await sb.from("yuyin").select("id,user_id,section,type,content,created_at").eq("section",3).order("created_at",{ascending:false}).limit(50);if(r.error){console.error(r.error);toast("语印暂时无法加载。");return}renderYuyin(r.data||[])}
+function renderYuyin(rows){var l=$("sealList");if(!rows.length){l.innerHTML='<div class="seal-item"><div class="seal-icon">琴</div><div class="note-body"><div class="seal-text">这一段还没有语印。留下第一枚吧。</div><div class="seal-by">琴境 · 匿名共享</div></div></div>';$('sealCount').textContent="0 枚";return}l.innerHTML=rows.map(function(r){var mine=currentUser&&r.user_id===currentUser.id;var d=new Date(r.created_at),when=d.toLocaleDateString("zh-CN",{month:"numeric",day:"numeric"});return '<div class="seal-item '+(mine?'mine':'')+'"><div class="seal-icon">'+(mine?'我':'悟')+'</div><div class="note-main"><div class="note-body"><div class="seal-meta">'+escapeHtml(r.type)+' · 第'+r.section+'段</div><div class="seal-text">'+escapeHtml(r.content)+'</div><div class="seal-by">'+(mine?'我的语印':'琴友 · 匿名')+' · '+when+'</div></div>'+(mine?'<button class="delete-yuyin" data-id="'+escapeHtml(r.id)+'">删除</button>':'')+'</div></div>'}).join('');l.querySelectorAll('.delete-yuyin').forEach(function(b){b.addEventListener('click',function(){deleteYuyin(b.dataset.id)})});$('sealCount').textContent=rows.length+" 枚"}
+async function deleteYuyin(id){if(!currentUser)return;if(!window.confirm("确定删除这枚语印吗？删除后无法恢复。"))return;var r=await sb.rpc("delete_yuyin",{p_id:id});if(r.error){console.error(r.error);toast("删除功能尚未开启，请先在 Supabase 执行 delete_yuyin 函数。");return}if(r.data&&r.data.success===false){toast(r.data.message||"只能删除自己的语印。\");return}await loadYuyin();toast("这枚语印已收回。")}
+async function saveSeal(){var t=$("sealText").value.trim();if(!t){toast("先写下一点你的琴心得吧。");return}if(t.length>100){toast("一枚语印最多100字。");return}if(!currentUser){toast("匿名身份尚未准备好，请稍后再试。");return}var r=await sb.rpc("submit_yuyin",{p_section:3,p_type:selectedSealType.replace(/^[^\u4e00-\u9fa5A-Za-z]*\s*/,""),p_content:t});if(r.error){toast(r.error.message&&r.error.message.indexOf("RATE_LIMIT")>=0?"本小时的3枚语印已经用完，请稍后再来。":r.error.message||"语印暂时没有落下，请稍后再试。");return}$("sealText").value="";closeSealComposer();await loadYuyin();toast("语印已落下。后来琴友会看见它。")}
+document.querySelectorAll('[data-action="open-seal"]').forEach(function(b){b.addEventListener("click",openSealComposer)});document.querySelectorAll('[data-action="close-seal"]').forEach(function(b){b.addEventListener("click",closeSealComposer)});document.querySelectorAll('[data-action="save-seal"]').forEach(function(b){b.addEventListener("click",saveSeal)});
+var sealModal=$("sealModal");if(sealModal)sealModal.addEventListener("click",function(e){if(e.target===sealModal)closeSealComposer()});
+function fakeUpload(){toast("上传入口已准备，可扩展为图片、PDF、录音和视频笔记")}
+document.querySelectorAll('[data-action="upload-note"]').forEach(function(b){b.addEventListener("click",fakeUpload)});
+function toast(msg){var t=$("toast");t.textContent=msg;t.classList.add("show");clearTimeout(window.__toast);window.__toast=setTimeout(function(){t.classList.remove("show")},2200)}
+renderColors();initUser();
