@@ -1,17 +1,21 @@
 /* 语印设备身份：不要求登录，用匿名账号 + 本机稳定设备号区分琴友。 */
 (function(){
-  var DEVICE_KEY="qjDeviceId";
+  var DEVICE_KEY="qjDeviceId", LABEL_KEY="qjUserLabel";
   function deviceId(){
     var id=localStorage.getItem(DEVICE_KEY);
     if(!id){id=(crypto&&crypto.randomUUID)?crypto.randomUUID():"dev-"+Date.now()+"-"+Math.random().toString(36).slice(2,10);localStorage.setItem(DEVICE_KEY,id)}
     return id;
   }
-  function shortId(id){return String(id||"").replace(/-/g,"").slice(-6).toUpperCase()||"匿名"}
+  function userLabel(){
+    var label=localStorage.getItem(LABEL_KEY);
+    if(!label){label=String(Math.floor(1000+Math.random()*9000));localStorage.setItem(LABEL_KEY,label)}
+    return label;
+  }
   function esc(s){return String(s==null?"":s).replace(/[&<>\"']/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[c]})}
   function songId(){return window.currentSongId||"liushui"}
   function labelForUser(id){
-    if(window.currentUser&&id===window.currentUser.id)return "我 · 琴友"+shortId(deviceId());
-    return "琴友 · "+shortId(id);
+    if(window.currentUser&&id===window.currentUser.id)return "我 · 琴友"+userLabel();
+    return "琴友 · "+String(id||"").replace(/-/g,"").slice(-4).toUpperCase()||"琴友";
   }
   async function loadAllYuyin(){
     if(!window.sb)return;
@@ -37,7 +41,7 @@
     }
   }
   window.qjDeviceId=deviceId();
-  window.qjDeviceLabel="琴友 · "+shortId(window.qjDeviceId);
+  window.qjDeviceLabel="琴友 · "+userLabel();
   window.loadYuyin=loadAllYuyin;
   if(document.readyState!=="loading")loadAllYuyin();else document.addEventListener("DOMContentLoaded",loadAllYuyin);
 })();
