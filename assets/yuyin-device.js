@@ -8,6 +8,7 @@
   }
   function shortId(id){return String(id||"").replace(/-/g,"").slice(-6).toUpperCase()||"匿名"}
   function esc(s){return String(s==null?"":s).replace(/[&<>\"']/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[c]})}
+  function songId(){return window.currentSongId||"liushui"}
   function labelForUser(id){
     if(window.currentUser&&id===window.currentUser.id)return "我 · 琴友"+shortId(deviceId());
     return "琴友 · "+shortId(id);
@@ -18,7 +19,7 @@
     if(!box)return;
     try{
       var section=(typeof window.currentPart!=="undefined"?window.currentPart+1:1);
-      var result=await window.sb.from("yuyin").select("id,user_id,section,type,content,created_at").eq("section",section).order("created_at",{ascending:false}).limit(50);
+      var result=await window.sb.from("yuyin").select("id,user_id,song_id,section,type,content,created_at").eq("song_id",songId()).eq("section",section).order("created_at",{ascending:false}).limit(50);
       if(result.error)throw result.error;
       var rows=result.data||[];
       if(count)count.textContent=rows.length+" 枚语印";
